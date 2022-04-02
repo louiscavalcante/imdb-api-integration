@@ -1,0 +1,16 @@
+{
+  "name": "imdb-api-integration",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/app/scripts/script.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "gunzip-file": "^0.1.1",
+    "node-cron": "^3.0.0",
+    "pg": "^8.7.3"
+  }
+}
