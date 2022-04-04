@@ -44,7 +44,7 @@ module.exports = {
 		return results.rows[0]
 	},
 
-	async update(data, id) {
+	async update(data) {
 		const query = `
             UPDATE titles SET
                 titletype=($1),
@@ -67,10 +67,10 @@ module.exports = {
 			data.endyear || '\\N',
 			data.runtimeminutes,
 			data.genres,
-			id,
+			data.tconst,
 		]
 
 		const results = await db.query(query, values)
-		return console.log(`Updated: ${id}`)
+		return console.log(`Updated: ${data.tconst}`)
 	},
 }

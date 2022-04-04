@@ -29,7 +29,7 @@ module.exports = {
 		return results.rows[0]
 	},
 
-	async update(data, id) {
+	async update(data) {
 		const query = `
             UPDATE ratings SET
                 averagerating=($1),
@@ -37,9 +37,9 @@ module.exports = {
             WHERE tconst = $3
         `
 
-		const values = [data.averagerating, data.numvotes, id]
+		const values = [data.averagerating, data.numvotes, data.tconst]
 
 		const results = await db.query(query, values)
-		return console.log(`Updated: ${id}`)
+		return console.log(`Updated: ${data.tconst}`)
 	},
 }

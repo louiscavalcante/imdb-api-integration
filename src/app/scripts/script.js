@@ -3,15 +3,19 @@ const fs = require('fs')
 const gunzip = require('gunzip-file')
 const readline = require('readline')
 const cron = require('node-cron')
+const EventEmitter = require('events')
+
+const events = new EventEmitter()
 
 const Titles = require('../models/titles_model.js')
 const Ratings = require('../models/ratings_model.js')
 
-async function downloader(fileName, url) {
+function downloader(fileName, url, downloadRatings, processLines) {
 	const file = fs.createWriteStream(`./src/assets/${fileName}`)
 
 	https.get(`${url}`, function (response) {
 		response.pipe(file)
+		console.log('Downloading...')
 
 		file.on('finish', () => {
 			console.log(`File Downloaded: ${fileName}`)
@@ -19,6 +23,9 @@ async function downloader(fileName, url) {
 			gunzip(`./src/assets/${fileName}`, `./src/assets/${fileName}`.slice(0, -3), () => {
 				console.log(`File Extracted: ${fileName}`.slice(0, -3))
 				console.log(`File Deleted: ${fileName}`)
+
+				events.emit(downloadRatings)
+				events.emit(processLines)
 			})
 
 			file.close()
@@ -54,7 +61,7 @@ async function processTitlesLines(fileName) {
 
 	for await (let line of data.slice(1)) {
 		if (!(await Titles.findId(line.tconst)) == []) {
-			await Titles.update(line, line.tconst)
+			await Titles.update(line)
 		} else {
 			await Titles.create(line)
 		}
@@ -81,32 +88,49 @@ async function processRatingsLines(fileName) {
 
 	for await (let line of data.slice(1)) {
 		if (!(await Ratings.findId(line.tconst)) == []) {
-			await Ratings.update(line, line.tconst)
+			await Ratings.update(line)
 		} else {
 			await Ratings.create(line)
 		}
 	}
 }
 
-async function asynchronousController() {
-	await downloader('title.ratings.tsv.gz', 'https://datasets.imdbws.com/title.ratings.tsv.gz')
-	await downloader('title.basics.tsv.gz', 'https://datasets.imdbws.com/title.basics.tsv.gz')
-	setTimeout(async () => {
-		await processTitlesLines('title.basics.tsv')
-	}, 90000)
-	setTimeout(async () => {
-		await processRatingsLines('title.ratings.tsv')
-	}, 180000)
+function startStep() {
+	downloader(
+		'title.basics.tsv.gz',
+		'https://datasets.imdbws.com/title.basics.tsv.gz',
+		'downloadRatings',
+		null
+	)
 }
 
-cron.schedule(
-	'0 1 * * *',
-	() => {
-		asynchronousController()
-		console.log('Cron Job Schedule: 1:00am, everyday at America/Sao_Paulo timezone')
-	},
-	{
-		scheduled: true,
-		timezone: 'America/Sao_Paulo',
+events.on('downloadRatings', () => {
+	downloader(
+		'title.ratings.tsv.gz',
+		'https://datasets.imdbws.com/title.ratings.tsv.gz',
+		null,
+		'processLines'
+	)
+})
+
+events.on('processLines', () => {
+	if (fs.existsSync('./src/assets/title.basics.tsv')) {
+		console.log('Warming Up...')
+		processTitlesLines('title.basics.tsv')
+		setTimeout(() => {
+			processRatingsLines('title.ratings.tsv')
+		}, 60000)
 	}
-)
+})
+
+// cron.schedule(
+// 	'0 1 * * *',
+// 	() => {
+startStep()
+// 		console.log('Cron Job Schedule: 1:00am, everyday at America/Sao_Paulo timezone')
+// 	},
+// 	{
+// 		scheduled: true,
+// 		timezone: 'America/Sao_Paulo',
+// 	}
+// )
