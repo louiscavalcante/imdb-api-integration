@@ -37,16 +37,14 @@ function downloader(fileName, url, downloadRatings, processLines) {
 
 async function processTitlesLines(fileName) {
 	const lines = readline.createInterface({
-		input: fs.createReadStream(`./src/assets/${fileName}`),
+		input: fs.createReadStream(`./src/assets/${fileName}`, { start: 92 }),
 		crlfDelay: Infinity,
 	})
-
-	let data = []
 
 	for await (let line of lines) {
 		const dataSplit = line.split('\t')
 
-		data.push({
+		const data = {
 			tconst: dataSplit[0],
 			titletype: dataSplit[1],
 			primarytitle: dataSplit[2],
@@ -56,41 +54,35 @@ async function processTitlesLines(fileName) {
 			endyear: dataSplit[6],
 			runtimeminutes: dataSplit[7],
 			genres: dataSplit[8],
-		})
-	}
+		}
 
-	for await (let line of data.slice(1)) {
-		if (!(await Titles.findId(line.tconst)) == []) {
-			await Titles.update(line)
+		if (!(await Titles.findId(data.tconst)) == []) {
+			await Titles.update(data)
 		} else {
-			await Titles.create(line)
+			await Titles.create(data)
 		}
 	}
 }
 
 async function processRatingsLines(fileName) {
 	const lines = readline.createInterface({
-		input: fs.createReadStream(`./src/assets/${fileName}`),
+		input: fs.createReadStream(`./src/assets/${fileName}`, { start: 30 }),
 		crlfDelay: Infinity,
 	})
-
-	let data = []
 
 	for await (let line of lines) {
 		const dataSplit = line.split('\t')
 
-		data.push({
+		const data = {
 			tconst: dataSplit[0],
 			averagerating: dataSplit[1],
 			numvotes: dataSplit[2],
-		})
-	}
+		}
 
-	for await (let line of data.slice(1)) {
-		if (!(await Ratings.findId(line.tconst)) == []) {
-			await Ratings.update(line)
+		if (!(await Ratings.findId(data.tconst)) == []) {
+			await Ratings.update(data)
 		} else {
-			await Ratings.create(line)
+			await Ratings.create(data)
 		}
 	}
 }
@@ -115,11 +107,10 @@ events.on('downloadRatings', () => {
 
 events.on('processLines', () => {
 	if (fs.existsSync('./src/assets/title.basics.tsv')) {
-		console.log('Warming Up...')
 		processTitlesLines('title.basics.tsv')
 		setTimeout(() => {
 			processRatingsLines('title.ratings.tsv')
-		}, 60000)
+		}, 30000)
 	}
 })
 

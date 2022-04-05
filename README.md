@@ -16,7 +16,7 @@ Roda o script de integração:<br>
 ---
 ## >!< Importante
 O database se encontra sem dados, só contém o schema. Será necessario rodar o integrador primeiro.<br>
-Favor rodar o integrador por 3 minutos antes de testar a API.<br>
+Favor rodar o integrador por 2 minutos antes de testar a API.<br>
 
 A função de Cron Job está comentada no código.<br>
 Assim o integrador pode ser testado e usado para preenxer o banco de dados a qualquer momento.<br>
